@@ -146,18 +146,8 @@ if st.button("Generate Schedule"):
                         schedule[d, n] = ""
 
             # --- Introduce randomness by shuffling the nurse order ---
-            perm = list(range(num_nurses))
-            random.shuffle(perm)
-            new_schedule = np.empty_like(schedule)
-            new_valid_names = [None] * num_nurses
-            for new_idx, old_idx in enumerate(perm):
-                new_schedule[:, new_idx] = schedule[:, old_idx]
-                new_valid_names[new_idx] = valid_names[old_idx]
-
-            # Save the (shuffled) schedule, dates, and valid names to session state for later use.
-            st.session_state.schedule = new_schedule
-            st.session_state.schedule_dates = schedule_dates
-            st.session_state.valid_names = new_valid_names
+            st.session_state.schedule = schedule
+            st.session_state.valid_names = valid_names
 
         else:
             st.error("No feasible schedule was found. Please adjust parameters and try again.")
