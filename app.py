@@ -32,6 +32,12 @@ st.header("Schedule Settings")
 # --- Option to choose the schedule start date ---
 start_date = st.date_input("Select the schedule start date", value=date.today())
 
+# --- Toggle for enforcing the maximum rest period constraint ---
+enforce_max_rest = st.checkbox(
+    "Enforce maximum consecutive off-shift periods (9 off-shifts) constraint",
+    value=True
+)
+
 # ----- Nurse Information -----
 st.header("Step 1. Enter Nurse Names (12 total)")
 nurse_names = []
@@ -91,7 +97,6 @@ if st.button("Generate Schedule"):
         # enforce that the nurse works on both days or off on both days.
         for n in range(num_nurses):
             for d in range(horizon - 1):
-                # Calculate the weekday for the current day and the next day.
                 current_weekday = (start_date + timedelta(days=d)).weekday()
                 next_weekday = (start_date + timedelta(days=d+1)).weekday()
                 if current_weekday == 5 and next_weekday == 6:
@@ -108,14 +113,12 @@ if st.button("Generate Schedule"):
 
         # --- Constraint 7: Maximum consecutive off-shift periods (9 off-shifts) ---
         # In every block of 5 consecutive days, each nurse must work at least one shift.
-        for n in range(num_nurses):
-            for d in range(horizon - 4):
-                model.Add(sum(x[n, d + i, 0] + x[n, d + i, 1] for i in range(5)) >= 1)
+        if enforce_max_rest:
+            for n in range(num_nurses):
+                for d in range(horizon - 4):
+                    model.Add(sum(x[n, d + i, 0] + x[n, d + i, 1] for i in range(5)) >= 1)
 
         # --- Introduce randomness into the solution process ---
-        # Instead of using a dummy or fixed search, we add an objective with random coefficients.
-        # This forces the solver to choose a solution that maximizes this random objective,
-        # thereby selecting randomly among the many feasible solutions.
         rand_obj = []
         for n in range(num_nurses):
             for d in range(horizon):
