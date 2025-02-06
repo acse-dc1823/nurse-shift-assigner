@@ -86,16 +86,16 @@ if st.button("Generate Schedule"):
                 model.Add(sum(x[n, d + i, 0] + x[n, d + i, 1] for i in range(4)) <= 3)
 
         # --- Constraint 4: Weekend pairing (Saturday and Sunday linked) ---
-        # Assuming day 0 is Monday so Saturday is index 5 and Sunday is index 6.
+        # Instead of assuming a Monday start, pair actual Saturdays and Sundays.
+        # For each day, if it is Saturday (weekday() == 5) and the following day is Sunday (weekday() == 6),
+        # enforce that the nurse works on both days or off on both days.
         for n in range(num_nurses):
-            for week in range(num_weeks):
-                sat = week * days_per_week + 5
-                sun = week * days_per_week + 6
-                sat_work = model.NewIntVar(0, 1, f"sat_n{n}_w{week}")
-                sun_work = model.NewIntVar(0, 1, f"sun_n{n}_w{week}")
-                model.Add(sat_work == x[n, sat, 0] + x[n, sat, 1])
-                model.Add(sun_work == x[n, sun, 0] + x[n, sun, 1])
-                model.Add(sat_work == sun_work)
+            for d in range(horizon - 1):
+                # Calculate the weekday for the current day and the next day.
+                current_weekday = (start_date + timedelta(days=d)).weekday()
+                next_weekday = (start_date + timedelta(days=d+1)).weekday()
+                if current_weekday == 5 and next_weekday == 6:
+                    model.Add(x[n, d, 0] + x[n, d, 1] == x[n, d+1, 0] + x[n, d+1, 1])
 
         # --- Constraint 5: Fair distribution of shifts ---
         for n in range(num_nurses):
@@ -145,7 +145,7 @@ if st.button("Generate Schedule"):
                     else:
                         schedule[d, n] = ""
 
-            # Save the (shuffled) schedule, dates, and valid names to session state for later use.
+            # Save the schedule, dates, and valid names to session state for later use.
             st.session_state.schedule = schedule
             st.session_state.schedule_dates = schedule_dates
             st.session_state.valid_names = valid_names
@@ -167,7 +167,7 @@ if st.session_state.schedule is not None:
     horizon = len(schedule_dates)
 
     # Create a list of string labels for days with their index included.
-    day_options = [f"{i}: {schedule_dates[i].strftime('%b %d (%a)')}" for i in range(horizon)]
+    day_options = [f"{i}: {(start_date + timedelta(days=i)).strftime('%b %d (%a)')}" for i in range(horizon)]
 
     st.subheader("Select Cell A")
     nurse_a = st.selectbox("Nurse A", valid_names, key="nurse_a")
