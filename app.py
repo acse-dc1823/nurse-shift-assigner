@@ -145,8 +145,9 @@ if st.button("Generate Schedule"):
                     else:
                         schedule[d, n] = ""
 
-            # --- Introduce randomness by shuffling the nurse order ---
+            # Save the (shuffled) schedule, dates, and valid names to session state for later use.
             st.session_state.schedule = schedule
+            st.session_state.schedule_dates = schedule_dates
             st.session_state.valid_names = valid_names
 
         else:
