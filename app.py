@@ -205,11 +205,15 @@ if st.session_state.schedule is not None:
                 # Save the updated schedule back to session state.
                 st.session_state.schedule = schedule
 
-# --- Always display the current schedule ---
-if st.session_state.schedule is not None:
+# --- Always display the current schedule if it exists ---
+if st.session_state.schedule is not None and st.session_state.schedule_dates is not None:
     st.subheader("Current Schedule Grid")
     day_labels = [dt.strftime("%b %d (%a)") for dt in st.session_state.schedule_dates]
-    df = pd.DataFrame(st.session_state.schedule, index=day_labels, columns=st.session_state.valid_names)
+    df = pd.DataFrame(
+        st.session_state.schedule,
+        index=day_labels,
+        columns=st.session_state.valid_names,
+    )
     st.dataframe(df.style.set_properties(**{"text-align": "center"}))
     
     st.markdown("""
@@ -218,3 +222,5 @@ if st.session_state.schedule is not None:
     - **N:** Night shift (12 hours)
     - **Blank:** Day off
     """)
+else:
+    st.info("Please generate a schedule to display it here.")
